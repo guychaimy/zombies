@@ -157,7 +157,7 @@ class Mob(pg.sprite.Sprite):
         self.target = game.player
         self.damaged = False
 
-        self.wait_pos = vec(x + 50, y)
+        self.wait_pos = vec(x, y)
         self.rot = uniform(0, 359)
 
     def avoid_mobs(self):
@@ -186,9 +186,9 @@ class Mob(pg.sprite.Sprite):
 
     def random_move(self):
         # check distance from initial span spot
-        dist_from_init = self.pos - self.init_pos
+        dist_from_init = self.pos - self.wait_pos
         if dist_from_init.length_squared() > RANDOM_MOVE_RANGE ** 2:
-            self.rot = (self.rot + uniform(140, 220)) % 360
+            self.rot = (self.rot + uniform(160, 200)) % 360
         self.image = pg.transform.rotate(self.game.mob_img, self.rot)
         self.rect = self.image.get_rect()
         self.avoid_mobs()
@@ -202,64 +202,34 @@ class Mob(pg.sprite.Sprite):
         self.rect.center = self.hit_rect.center
 
     def update(self):
-        # sound mouning sounds every often
-        if random() < 0.002:
-            choice(self.game.zombie_moan_sounds).play()
         # check distance from player
-        target = self.wait_pos
-        self.speed = RANDOM_MOVE_SPEED
         target_dist = self.target.pos - self.pos
         if target_dist.length_squared() < DETECT_RADIUS ** 2:
-            target = self.game.player.pos
-            self.speed = self.move_speed
             # Play a zombie sound
-            # if random() < 0.002:
-            #     choice(self.game.zombie_moan_sounds).play()
-            # # self.speed = self.move_speed
-            # self.rot = (self.game.player.pos - self.pos).angle_to(vec(1, 0))
-            # self.image = pg.transform.rotate(self.game.mob_img, self.rot)
-            # self.rect = self.image.get_rect()
-            # self.acc = vec(1, 0).rotate(-self.rot)
-            # self.avoid_mobs()
-            # self.acc.scale_to_length(self.speed)
-            # self.acc += self.vel * -1
-            # self.vel += self.acc * self.game.dt
-            # self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-            # self.rect.center = self.pos
-            # self.hit_rect.centerx = self.pos.x
-            # collide_with_wall(self, self.game.walls, 'x')
-            # self.hit_rect.centery = self.pos.y
-            # collide_with_wall(self, self.game.walls, 'y')
-            # self.rect.center = self.hit_rect.center
-            # self.init_pos = self.pos * 1
-        # else:
-        # self.random_move()
-
-        # self.speed = self.move_speed
-        self.rot = (target - self.pos).angle_to(vec(1, 0))
-        desire = (target - self.pos).normalize() * self.speed
-        self.acc = desire - self.vel
-        self.image = pg.transform.rotate(self.game.mob_img, self.rot)
-        self.rect = self.image.get_rect()
-        self.acc.scale_to_length(WAITING_FORCE)
-        self.acc = vec(1, 0).rotate(-self.rot)
-        self.avoid_mobs()
-        self.acc += self.vel * -1
-        self.vel += self.acc * self.game.dt
-        self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-        self.rect.center = self.pos
-        self.hit_rect.centerx = self.pos.x
-        collide_with_wall(self, self.game.walls, 'x')
-        self.hit_rect.centery = self.pos.y
-        collide_with_wall(self, self.game.walls, 'y')
-        self.rect.center = self.hit_rect.center
-        self.wait_pos = self.pos * 1
-
+            if random() < 0.002:
+                choice(self.game.zombie_moan_sounds).play()
+            self.rot = (self.game.player.pos - self.pos).angle_to(vec(1, 0))
+            self.image = pg.transform.rotate(self.game.mob_img, self.rot)
+            self.rect = self.image.get_rect()
+            self.acc = vec(1, 0).rotate(-self.rot)
+            self.avoid_mobs()
+            self.acc.scale_to_length(self.speed)
+            self.acc += self.vel * -1
+            self.vel += self.acc * self.game.dt
+            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+            self.rect.center = self.pos
+            self.hit_rect.centerx = self.pos.x
+            collide_with_wall(self, self.game.walls, 'x')
+            self.hit_rect.centery = self.pos.y
+            collide_with_wall(self, self.game.walls, 'y')
+            self.rect.center = self.hit_rect.center
+            self.wait_pos = self.pos * 1
+        else:
+            self.random_move()
         if self.health <= 0:
             self.kill()
             choice(self.game.zombie_hit_sounds).play()
             self.game.map_img.blit(self.game.splat, self.pos - vec(32, 32))
-
         # Blinks when hit
         if self.damaged:
             try:

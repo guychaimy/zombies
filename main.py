@@ -232,6 +232,12 @@ class Game:
             if self.draw_debug:
                 if isinstance(sprite, (Player, Mob)):
                     pg.draw.rect(self.screen, CYAN, self.camera.apply_rect(sprite.hit_rect), 1)
+                    try:
+                        pg.draw.line(self.screen,GREEN, sprite.pos,(sprite.pos + sprite.vel),5)
+                        pg.draw.line(self.screen,RED, sprite.pos,(sprite.pos + sprite.acc),5)
+                    except:
+                        pass
+
                 else:
                     pg.draw.rect(self.screen, CYAN, self.camera.apply(sprite), 1)
         if self.draw_debug:

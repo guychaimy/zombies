@@ -150,15 +150,15 @@ class Mob(pg.sprite.Sprite):
         self.rot = 0
         self.health = MOB_HEALTH
 
-        # self.speed = choice(MOB_SPEED)
-        self.move_speed = choice(MOB_SPEED)
-        self.speed = self.move_speed
+        self.speed = choice(MOB_SPEED)
 
         self.target = game.player
         self.damaged = False
 
-        self.wait_pos = vec(x, y)
+        self.wait_pos = vec(x + 5, y + 5)
         self.rot = uniform(0, 359)
+
+        self.last_move_change = 0
 
     def avoid_mobs(self):
         for mob in self.game.mobs:
@@ -185,14 +185,14 @@ class Mob(pg.sprite.Sprite):
         self.damaged_alpha = itertools.chain(DAMAGED_ALPHA * 4)
 
     def random_move(self):
+        """currently not in use"""
         # check distance from initial span spot
-        dist_from_init = self.pos - self.wait_pos
-        if dist_from_init.length_squared() > RANDOM_MOVE_RANGE ** 2:
-            self.rot = (self.rot + uniform(160, 200)) % 360
         self.image = pg.transform.rotate(self.game.mob_img, self.rot)
         self.rect = self.image.get_rect()
-        self.avoid_mobs()
-        self.vel = vec(RANDOM_MOVE_SPEED, 0).rotate(-self.rot)
+        dist_from_init = self.pos - self.wait_pos
+        if dist_from_init.length_squared() > MOB_WAITING_RANGE ** 2:
+            self.rot = (self.rot + uniform(160, 200)) % 360
+        self.vel = vec(MOB_WAITING_SPEED, 0).rotate(-self.rot)
         self.pos += self.vel * self.game.dt
         self.rect.center = self.pos
         self.hit_rect.centerx = self.pos.x
@@ -200,6 +200,19 @@ class Mob(pg.sprite.Sprite):
         self.hit_rect.centery = self.pos.y
         collide_with_wall(self, self.game.walls, 'y')
         self.rect.center = self.hit_rect.center
+
+    def seek(self, target):
+        self.desired = (target - self.pos).normalize() * MOB_WAITING_SPEED
+        steer = (self.desired - self.vel)
+        if steer.length() > MOB_WAITING_SPEED:
+            steer.scale_to_length(MOB_WAITING_SPEED)
+        return steer
+
+    def wander(self):
+        circle_pos = self.wait_pos
+        target = circle_pos + vec(MOB_WAITING_RANGE, 0).rotate(uniform(0, 360))
+        self.displacement = target
+        return self.seek(target)
 
     def update(self):
         # check distance from player
@@ -209,23 +222,40 @@ class Mob(pg.sprite.Sprite):
             if random() < 0.002:
                 choice(self.game.zombie_moan_sounds).play()
             self.rot = (self.game.player.pos - self.pos).angle_to(vec(1, 0))
-            self.image = pg.transform.rotate(self.game.mob_img, self.rot)
-            self.rect = self.image.get_rect()
+            # self.image = pg.transform.rotate(self.game.mob_img, self.rot)
+            # self.rect = self.image.get_rect()
             self.acc = vec(1, 0).rotate(-self.rot)
             self.avoid_mobs()
             self.acc.scale_to_length(self.speed)
             self.acc += self.vel * -1
-            self.vel += self.acc * self.game.dt
-            self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
-            self.rect.center = self.pos
-            self.hit_rect.centerx = self.pos.x
-            collide_with_wall(self, self.game.walls, 'x')
-            self.hit_rect.centery = self.pos.y
-            collide_with_wall(self, self.game.walls, 'y')
-            self.rect.center = self.hit_rect.center
+            # self.vel += self.acc * self.game.dt
+            # self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+            # self.rect.center = self.pos
+            # self.hit_rect.centerx = self.pos.x
+            # collide_with_wall(self, self.game.walls, 'x')
+            # self.hit_rect.centery = self.pos.y
+            # collide_with_wall(self, self.game.walls, 'y')
+            # self.rect.center = self.hit_rect.center
             self.wait_pos = self.pos * 1
         else:
-            self.random_move()
+            # self.random_move()
+            now = pg.time.get_ticks()
+            if now - self.last_move_change > DIRECTION_CHANGE_TIME:
+                self.last_move_change = now
+                self.acc = self.wander()
+                # equations of motion
+        self.rot = self.vel.angle_to(vec(1, 0))
+        self.vel += self.acc * self.game.dt
+        self.pos += self.vel * self.game.dt + 0.5 * self.acc * self.game.dt ** 2
+        self.image = pg.transform.rotate(self.game.mob_img, self.rot)
+        self.rect = self.image.get_rect()
+        self.rect.center = self.pos
+        self.hit_rect.centerx = self.pos.x
+        collide_with_wall(self, self.game.walls, 'x')
+        self.hit_rect.centery = self.pos.y
+        collide_with_wall(self, self.game.walls, 'y')
+        self.rect.center = self.hit_rect.center
+
         if self.health <= 0:
             self.kill()
             choice(self.game.zombie_hit_sounds).play()

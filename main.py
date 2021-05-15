@@ -233,8 +233,9 @@ class Game:
                 if isinstance(sprite, (Player, Mob)):
                     pg.draw.rect(self.screen, CYAN, self.camera.apply_rect(sprite.hit_rect), 1)
                     try:
-                        pg.draw.line(self.screen,GREEN, sprite.pos,(sprite.pos + sprite.vel),5)
-                        pg.draw.line(self.screen,RED, sprite.pos,(sprite.pos + sprite.acc),5)
+                        pg.draw.line(self.screen, GREEN, self.camera.apply_line(sprite), (sprite.pos + sprite.vel), 2)
+                        pg.draw.line(self.screen, RED, sprite.pos, (sprite.pos + sprite.acc), 2)
+                        pg.draw.circle(self.screen, YELLOW, sprite.displacement, 5)
                     except:
                         pass
 
@@ -250,10 +251,6 @@ class Game:
         draw_player_health(self.screen, 10, 10, self.player.health / PLAYER_HEALTH)
         self.draw_text('Zombies: {}'.format(len(self.mobs)), self.hud_font, 30, YELLOW,
                        WIDTH - 10, 10, align='ne')
-        # Draw mini map of the level
-        if self.present_minimap:
-            pass
-
         # Pause the game when p is pressed
         if self.paused:
             self.screen.blit(self.dim_screen, (0, 0))

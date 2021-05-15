@@ -65,6 +65,10 @@ class Camera:
         """used to shift Obstacles based on camera location"""
         return rect.move(self.camera.topleft)
 
+    def apply_line(self, entity):
+        """used to shift Obstacles based on camera location"""
+        return entity.pos.move(self.camera.topleft)
+
     def update(self, target):
         x = -target.rect.centerx + int(WIDTH / 2)
         y = -target.rect.centery + int(HEIGHT / 2)
